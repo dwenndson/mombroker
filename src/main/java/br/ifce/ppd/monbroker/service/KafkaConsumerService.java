@@ -1,4 +1,4 @@
-package br.ifce.ppd.monbroker.controller;
+package br.ifce.ppd.monbroker.service;
 
 import br.ifce.ppd.monbroker.dto.MessageDTO;
 import org.springframework.kafka.annotation.KafkaListener;
