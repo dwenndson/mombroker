@@ -1,14 +1,13 @@
 package br.ifce.ppd.monbroker.service;
 
 import br.ifce.ppd.monbroker.dto.MessageDTO;
-import br.ifce.ppd.monbroker.service.strings.NomeclaturaComponent;
+import br.ifce.ppd.monbroker.service.strings.StringsConstants;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class KafkaProducerService {
 
-    private NomeclaturaComponent nomeclaturaComponent;
 
     private final KafkaTemplate<String, MessageDTO> kafkaTemplate;
 
@@ -19,7 +18,7 @@ public class KafkaProducerService {
     public void sendMessage(MessageDTO message) {
         String topicName;
         if (message.getType() == MessageDTO.MessageType.DIRECT) {
-            topicName = nomeclaturaComponent.USER_INBOX + message.getRecipient();
+            topicName = StringsConstants.USER_INBOX + message.getRecipient();
         } else {
             topicName = message.getRecipient();
         }

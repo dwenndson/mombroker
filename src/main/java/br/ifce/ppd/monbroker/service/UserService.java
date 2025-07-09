@@ -1,6 +1,6 @@
 package br.ifce.ppd.monbroker.service;
 
-import br.ifce.ppd.monbroker.service.strings.NomeclaturaComponent;
+import br.ifce.ppd.monbroker.service.strings.StringsConstants;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserService {
 
     private final  KafkaAdminService kafkaAdminService;
-    private NomeclaturaComponent nomeclaturaComponent;
+
     private final Set<String> users = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public UserService(KafkaAdminService kafkaAdminService){
@@ -20,7 +20,7 @@ public class UserService {
 
     public boolean registerUser(String username) {
         if(users.add(username)){
-            String personalTopic = nomeclaturaComponent.USER_INBOX + username;
+            String personalTopic = StringsConstants.USER_INBOX + username;
             try {
                 kafkaAdminService.createTopic(personalTopic);
                 System.out.println("Tópico pessoal criado para " + username + ": " + personalTopic);

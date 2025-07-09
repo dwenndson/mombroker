@@ -2,6 +2,6 @@ package br.ifce.ppd.monbroker.service.strings;
 
 import org.springframework.stereotype.Component;
 
-public abstract class NomeclaturaComponent {
-    public final String USER_INBOX = "user-inbox-";
+public final class StringsConstants {
+    public static final String USER_INBOX = "user-inbox-";
 }
