@@ -110,12 +110,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function connectWebSocket() {
         const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
-        stompClient.connect({ login: username, passcode: 'password' }, // O header 'login' é usado pelo Spring para identificar o usuário
+
+        stompClient.debug = (str) => {
+            console.log('STOMP DEBUG: ' + str);
+        }
+        stompClient.connect({ login: username, passcode: 'password' },
             (frame) => {
-                console.log('Conectado: ' + frame);
+                console.log('Conectado ao WebSocket: ' + frame);
+
+                const userDestination = `/user/${username}/queue/messages`;
+                console.log(`Inscrevendo-se no destinmo pessoal: ${userDestination}`);
 
                 // Inscrição na fila pessoal para mensagens diretas
-                stompClient.subscribe(`/user/${username}/queue/messages`, (message) => {
+                stompClient.subscribe(userDestination, (message) => {
+                    console.log("!!! MENSAGEM DIRETA RECEBIDA PELO CLIENTE !!!", message);
                     const msg = JSON.parse(message.body);
                     displayMessage(msg, false);
                 });
@@ -137,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (subscriptions.has(topic)) {
             // Desinscrever
             const subscription = subscriptions.get(topic);
+            console.log("--- MENSAGEM DE TÓPICO RECEBIDA ---", message);
             subscription.unsubscribe();
             subscriptions.delete(topic);
             topicItem.classList.remove('active');
@@ -184,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 // Se a mensagem foi para mim mesmo (em um tópico), não mostro duas vezes.
                 // O backend envia de volta via WebSocket.
-                if (message.type !== 'DIRECT' || message.recipient !== username) {
+                if (message.type !== 'TOPIC' || message.recipient !== username) {
                      displayMessage(message, true); // Mostra a mensagem enviada na tela
                 }
                 messageInput.value = '';
@@ -194,6 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao enviar mensagem:', error);
             alert('Erro de conexão ao enviar mensagem.');
+        }
+    });
+
+    messageInput.addEventListener('keypress', (e) => {
+        if(e.key === "Enter") {
+            sendBtn.click();
         }
     });
 

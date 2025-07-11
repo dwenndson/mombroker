@@ -13,19 +13,18 @@ public class KafkaConsumerService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    // Este listener usa uma expressão regular para "ouvir" todos os tópicos que começam com "user-inbox-".
-    // Ele também ouve todos os outros tópicos que não começam com "user-inbox-".
-    // O groupId garante que, se houver múltiplas instâncias do servidor, a mensagem seja processada apenas uma vez.
-    @KafkaListener(topicPattern = ".*", groupId = "mon-broker-group")
+
+    @KafkaListener(topicPattern = ".*", groupId = "mom-broker-group")
     public void consumer(MessageDTO message) {
-        System.out.println("Mensagem recebida do Kafka: " + message.getContent());
+        System.out.println("Mensagem recebida do Kafka: " + message.getContent() + " para " + message.getRecipient());
 
         if (message.getType() == MessageDTO.MessageType.DIRECT) {
             // Mensagem direta: envia para a fila pessoal do usuário no WebSocket.
             // Ex: /queue/messages para o usuário "luigi"
-            String destination = "/queue/messages";
+            String destination = "/user/" + message.getRecipient() + "/queue/messages";
             System.out.println("Enviando mensagem direta para o usuário '" + message.getRecipient() + "' no destino WebSocket: " + destination);
-            messagingTemplate.convertAndSendToUser(message.getRecipient(), destination, message);
+            // O Spring usa o Principal do STOMP para rotear a mensagem para o usuário correto.
+            messagingTemplate.convertAndSend(destination, message);
 
         } else if (message.getType() == MessageDTO.MessageType.TOPIC) {
             // Mensagem de tópico: envia para o tópico público no WebSocket.
