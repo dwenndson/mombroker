@@ -196,8 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Se a mensagem foi para mim mesmo (em um tópico), não mostro duas vezes.
                 // O backend envia de volta via WebSocket.
                 if (message.type !== 'TOPIC' || message.recipient !== username) {
-                     displayMessage(message, true); // Mostra a mensagem enviada na tela
-                } else if( message.type == 'DIRECT' || message.recipient == username) {
+                    displayMessage(message, true); // Mostra a mensagem enviada na tela
+                } else {
                     displayMessage(message, true)
                 }
                 messageInput.value = '';

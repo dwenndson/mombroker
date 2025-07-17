@@ -1,13 +1,15 @@
 package br.ifce.ppd.monbroker.service;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Service
 public class KafkaAdminService {
@@ -59,6 +61,45 @@ public class KafkaAdminService {
                 Thread.currentThread().interrupt();
             }
             throw new RuntimeException("Falha ao deletar o tópico: " + e.getMessage(), e);
+        }
+    }
+
+    public long getTopicMessageCount(String topicName) {
+        try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+            // Descreve o tópico para obter informações sobre suas partições
+            DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singleton(topicName));
+            Map<String, TopicDescription> topicDescriptionMap = describeTopicsResult.allTopicNames().get();
+
+            if (topicDescriptionMap.isEmpty()) {
+                return 0;
+            }
+
+            // Pega a lista de partições do tópico
+            TopicDescription topicDescription = topicDescriptionMap.get(topicName);
+            Set<TopicPartition> partitions = topicDescription.partitions().stream()
+                    .map(p -> new TopicPartition(topicName, p.partition()))
+                    .collect(Collectors.toSet());
+
+            // Obtém os offsets de início e fim para as partições
+            Map<TopicPartition, Long> startOffsets = adminClient.listOffsets(
+                    partitions.stream().collect(Collectors.toMap(p -> p, p -> OffsetSpec.earliest()))
+            ).all().get().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().offset()));
+
+            Map<TopicPartition, Long> endOffsets = adminClient.listOffsets(
+                    partitions.stream().collect(Collectors.toMap(p -> p, p -> OffsetSpec.latest()))
+            ).all().get().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().offset()));
+
+            // Calcula o total de mensagens somando (end - start) para cada partição
+            long totalMessages = partitions.stream()
+                    .mapToLong(p -> endOffsets.getOrDefault(p, 0L) - startOffsets.getOrDefault(p, 0L))
+                    .sum();
+
+            return totalMessages;
+
+        } catch (InterruptedException | ExecutionException e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            // Retorna 0 em caso de erro (ex: tópico não encontrado)
+            return 0;
         }
     }
 }

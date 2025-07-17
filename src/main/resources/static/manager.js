@@ -32,12 +32,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            publicTopics.forEach(topic => {
+            // Para cada tópico, busca a contagem de mensagens
+            for (const topic of publicTopics) {
                 const li = document.createElement('li');
                 li.className = 'list-group-item';
-                li.innerHTML = `<span>${topic}</span> <button class="btn btn-danger btn-sm" data-topic="${topic}">Remover</button>`;
+
+                li.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <span>${topic}</span>
+                        <span id="count-${topic}" class="badge bg-secondary rounded-pill">...</span>
+                    </div>
+                    <button class="btn btn-danger btn-sm mt-1" data-topic="${topic}">Remover</button>
+                `;
                 topicsList.appendChild(li);
-            });
+
+                // --- DEPURAÇÃO ADICIONADA AQUI ---
+                const countUrl = `${KAFKA_API_URL}/topic/${topic}/count?_=${new Date().getTime()}`;
+                console.log(`Buscando contagem para o tópico '${topic}' em: ${countUrl}`);
+
+                fetch(countUrl)
+                    .then(res => {
+                        console.log(`Resposta recebida para '${topic}':`, res);
+                        if (!res.ok) {
+                            throw new Error(`Erro HTTP ${res.status} ao buscar contagem.`);
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log(`Dados JSON recebidos para '${topic}':`, data);
+                        const countSpan = document.getElementById(`count-${topic}`);
+                        if (countSpan) {
+                            countSpan.textContent = data.messageCount;
+                            countSpan.className = 'badge bg-primary rounded-pill';
+                        } else {
+                            console.error(`Elemento com ID 'count-${topic}' não foi encontrado no DOM.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(`Erro ao buscar contagem para '${topic}':`, err);
+                        const countSpan = document.getElementById(`count-${topic}`);
+                        if (countSpan) {
+                            countSpan.textContent = 'Erro';
+                            countSpan.className = 'badge bg-danger rounded-pill';
+                        }
+                    });
+            }
+
         } catch (error) {
             topicsList.innerHTML = `<li class="list-group-item text-danger">${error.message}</li>`;
         }

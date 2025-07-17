@@ -57,4 +57,11 @@ public class KafkaManagerController {
             return ResponseEntity.status(500).body("Erro ao deletar tópico: " + e.getMessage());
         }
     }
+
+    @Operation(summary = "Retorna a quantidade de mensagens em um tópico")
+    @GetMapping("/topic/{topicName}/count")
+    public ResponseEntity<Map<String, Long>> getTopicMessageCount(@PathVariable String topicName) {
+        long count = kafkaAdminService.getTopicMessageCount(topicName);
+        return ResponseEntity.ok(Map.of("messageCount", count));
+    }
 }
