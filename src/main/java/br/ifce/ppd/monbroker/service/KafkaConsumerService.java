@@ -16,15 +16,19 @@ public class KafkaConsumerService {
 
     @KafkaListener(topicPattern = ".*", groupId = "mom-broker-group")
     public void consumer(MessageDTO message) {
-        System.out.println("Mensagem recebida do Kafka: " + message.getContent() + " para " + message.getRecipient());
+        System.out.println("### KAFKA CONSUMER: Mensagem recebida do tópico: " + message.getContent() +
+                " | Tipo: " + message.getType() +
+                " | Remetente: " + message.getSender() +
+                " | Destinatário: " + message.getRecipient());
 
         if (message.getType() == MessageDTO.MessageType.DIRECT) {
             // Mensagem direta: envia para a fila pessoal do usuário no WebSocket.
             // Ex: /queue/messages para o usuário "luigi"
             String destination = "/user/" + message.getRecipient() + "/queue/messages";
-            System.out.println("Enviando mensagem direta para o usuário '" + message.getRecipient() + "' no destino WebSocket: " + destination);
+            System.out.println("### ENVIANDO MENSAGEM DIRETA: Para usuário '" + message.getRecipient() +
+                    "' no destino WebSocket: " + destination);
             // O Spring usa o Principal do STOMP para rotear a mensagem para o usuário correto.
-            messagingTemplate.convertAndSend(destination, message);
+            messagingTemplate.convertAndSendToUser(message.getRecipient(), "/queue/messages", message);
 
         } else if (message.getType() == MessageDTO.MessageType.TOPIC) {
             // Mensagem de tópico: envia para o tópico público no WebSocket.
@@ -32,6 +36,8 @@ public class KafkaConsumerService {
             String destination = "/topic/" + message.getRecipient();
             System.out.println("Enviando mensagem de tópico para '" + message.getRecipient() + "' no destino WebSocket: " + destination);
             messagingTemplate.convertAndSend(destination, message);
+        } else {
+            System.err.println("### ERRO: Tipo de mensagem não reconhecido: " + message.getType());
         }
     }
 }

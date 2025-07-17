@@ -131,8 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 displaySystemMessage(`Conectado como ${username}. Pronto para enviar e receber mensagens.`);
             },
             (error) => {
+                stompClient.connectWebSocket = (error) => {
                 console.error('Erro na conexão WebSocket:', error);
                 displaySystemMessage('Erro de conexão. Tente recarregar a página.');
+                }
             }
         );
     }
@@ -195,6 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // O backend envia de volta via WebSocket.
                 if (message.type !== 'TOPIC' || message.recipient !== username) {
                      displayMessage(message, true); // Mostra a mensagem enviada na tela
+                } else if( message.type == 'DIRECT' || message.recipient == username) {
+                    displayMessage(message, true)
                 }
                 messageInput.value = '';
             } else {

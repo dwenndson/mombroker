@@ -26,6 +26,7 @@ public class WebSocketConfig  implements WebSocketMessageBrokerConfigurer {
         // Define o prefixo para endpoints de aplicação
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
+        config.setPreservePublishOrder(true);
     }
 
     @Override
@@ -50,7 +51,7 @@ public class WebSocketConfig  implements WebSocketMessageBrokerConfigurer {
                         String username = accessor.getFirstNativeHeader("login");
                         if (!username.trim().isEmpty()) {
                             // Cria nosso Principal customizado e o associa à sessão
-                            UserPrincipal principal = new UserPrincipal(username);
+                            UserPrincipal principal = new UserPrincipal(username.trim());
                             accessor.setUser(principal);
                             System.out.println("### WebSocket Principal set for user: " + username);
 
